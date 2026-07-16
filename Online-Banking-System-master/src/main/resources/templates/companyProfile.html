@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head th:replace="common/header :: common-header"/>
+<body roleId="page-top" data-spy="scroll" data-target=".navbar-fixed-top">
+<head th:replace="common/header :: navbar"/>
+<div class="container">
+    <div class="row main">
+        <div class="col-md-8 col-md-offset-2">
+            <h2 class="title">Company Management</h2>
+            <hr/>
+            <div class="alert alert-success" th:if="${successMessage}">
+                Company information has been saved.
+            </div>
+            <form method="post" th:action="@{/company/profile}">
+                <input type="hidden" name="companyId" th:value="${company.companyId}"/>
+
+                <div class="form-group">
+                    <label for="name">Company Name</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-building" aria-hidden="true"></i></span>
+                        <input type="text" class="form-control" id="name" name="name" th:value="${company.name}"
+                               placeholder="Enter company name" required="required"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="taxCode">Tax Code</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-id-card" aria-hidden="true"></i></span>
+                        <input type="text" class="form-control" id="taxCode" name="taxCode" th:value="${company.taxCode}"
+                               placeholder="Enter tax code"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-map-marker" aria-hidden="true"></i></span>
+                        <input type="text" class="form-control" id="address" name="address" th:value="${company.address}"
+                               placeholder="Enter company address"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-phone" aria-hidden="true"></i></span>
+                        <input type="text" class="form-control" id="phone" name="phone" th:value="${company.phone}"
+                               placeholder="Enter company phone"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-envelope" aria-hidden="true"></i></span>
+                        <input type="email" class="form-control" id="email" name="email" th:value="${company.email}"
+                               placeholder="Enter company email"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="5"
+                              placeholder="Enter company description" th:text="${company.description}"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary btn-block">Save Company</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div th:replace="common/header :: body-bottom-scripts"/>
+
+</body>
+</html>
