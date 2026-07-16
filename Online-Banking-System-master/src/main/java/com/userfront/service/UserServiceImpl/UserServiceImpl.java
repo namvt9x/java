@@ -2,6 +2,7 @@ package com.userfront.service.UserServiceImpl;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,6 +103,18 @@ public class UserServiceImpl implements UserService{
     
     public List<User> findUserList() {
         return userDao.findAll();
+    }
+
+    public List<User> findRegularUserList() {
+        return userDao.findAll().stream()
+                .filter(user -> user.getCompany() == null)
+                .collect(Collectors.toList());
+    }
+
+    public List<User> findCompanyUserList() {
+        return userDao.findAll().stream()
+                .filter(user -> user.getCompany() != null)
+                .collect(Collectors.toList());
     }
 
     public void enableUser (String username) {

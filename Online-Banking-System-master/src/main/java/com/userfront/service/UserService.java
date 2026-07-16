@@ -25,6 +25,10 @@ public interface UserService {
     
     List<User> findUserList();
 
+    List<User> findRegularUserList();
+
+    List<User> findCompanyUserList();
+
     void enableUser (String username);
 
     void disableUser (String username);
