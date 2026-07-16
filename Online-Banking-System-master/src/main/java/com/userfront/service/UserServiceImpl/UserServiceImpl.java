@@ -2,6 +2,7 @@ package com.userfront.service.UserServiceImpl;
 
 import java.util.List;
 import java.util.Set;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -57,6 +58,9 @@ public class UserServiceImpl implements UserService{
         } else {
             String encryptedPassword = passwordEncoder.encode(user.getPassword());
             user.setPassword(encryptedPassword);
+            if (user.getCustomerSince() == null) {
+                user.setCustomerSince(new Date());
+            }
 
             for (UserRole ur : userRoles) {
                 roleDao.save(ur.getRole());

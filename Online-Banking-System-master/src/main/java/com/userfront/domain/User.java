@@ -1,6 +1,7 @@
 package com.userfront.domain;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -39,6 +42,9 @@ public class User implements UserDetails{
     @Column(name = "email", nullable = false, unique = true)
     private String email;
     private String phone;
+
+    @Temporal(TemporalType.DATE)
+    private Date customerSince;
 
     private boolean enabled=true;
 
@@ -119,6 +125,14 @@ public class User implements UserDetails{
         this.phone = phone;
     }
 
+    public Date getCustomerSince() {
+        return customerSince;
+    }
+
+    public void setCustomerSince(Date customerSince) {
+        this.customerSince = customerSince;
+    }
+
     public List<Appointment> getAppointmentList() {
         return appointmentList;
     }
@@ -181,6 +195,7 @@ public class User implements UserDetails{
                 ", lastName='" + lastName + '\'' +
                 ", email='" + email + '\'' +
                 ", phone='" + phone + '\'' +
+                ", customerSince=" + customerSince +
                 ", appointmentList=" + appointmentList +
                 ", recipientList=" + recipientList +
                 ", userRoles=" + userRoles +
