@@ -8,6 +8,7 @@ public class UserLoanCalculationRequest {
     private BigDecimal annualInterestRate;
     private Integer termMonths;
     private Integer paidMonths;
+    private Integer paidInterestMonths;
     private String disbursedDate;
 
     public BigDecimal getPrincipal() {
@@ -40,6 +41,14 @@ public class UserLoanCalculationRequest {
 
     public void setPaidMonths(Integer paidMonths) {
         this.paidMonths = paidMonths;
+    }
+
+    public Integer getPaidInterestMonths() {
+        return paidInterestMonths;
+    }
+
+    public void setPaidInterestMonths(Integer paidInterestMonths) {
+        this.paidInterestMonths = paidInterestMonths;
     }
 
     public String getDisbursedDate() {

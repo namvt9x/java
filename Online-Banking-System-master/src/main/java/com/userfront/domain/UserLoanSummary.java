@@ -9,11 +9,17 @@ public class UserLoanSummary {
     private Long userId;
     private String username;
     private String fullName;
+    private boolean companyUser;
+    private Long companyId;
+    private String companyName;
     private BigDecimal principal;
     private BigDecimal annualInterestRate;
     private Integer termMonths;
     private Integer paidMonths;
+    private Integer paidInterestMonths;
     private Integer remainingMonths;
+    private Integer overdueMonths;
+    private Integer unpaidInterestMonths;
     private LocalDate disbursedDate;
     private LocalDate nextDueDate;
     private BigDecimal monthlyPayment;
@@ -23,6 +29,9 @@ public class UserLoanSummary {
     private BigDecimal paidInterest;
     private BigDecimal remainingPrincipal;
     private BigDecimal remainingInterest;
+    private BigDecimal penaltyAmount;
+    private boolean loanExpired;
+    private boolean lateInterestPayment;
     private String status;
     private List<UserLoanRepaymentItem> repaymentSchedule;
 
@@ -48,6 +57,30 @@ public class UserLoanSummary {
 
     public void setFullName(String fullName) {
         this.fullName = fullName;
+    }
+
+    public boolean isCompanyUser() {
+        return companyUser;
+    }
+
+    public void setCompanyUser(boolean companyUser) {
+        this.companyUser = companyUser;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
     }
 
     public BigDecimal getPrincipal() {
@@ -82,12 +115,36 @@ public class UserLoanSummary {
         this.paidMonths = paidMonths;
     }
 
+    public Integer getPaidInterestMonths() {
+        return paidInterestMonths;
+    }
+
+    public void setPaidInterestMonths(Integer paidInterestMonths) {
+        this.paidInterestMonths = paidInterestMonths;
+    }
+
     public Integer getRemainingMonths() {
         return remainingMonths;
     }
 
     public void setRemainingMonths(Integer remainingMonths) {
         this.remainingMonths = remainingMonths;
+    }
+
+    public Integer getOverdueMonths() {
+        return overdueMonths;
+    }
+
+    public void setOverdueMonths(Integer overdueMonths) {
+        this.overdueMonths = overdueMonths;
+    }
+
+    public Integer getUnpaidInterestMonths() {
+        return unpaidInterestMonths;
+    }
+
+    public void setUnpaidInterestMonths(Integer unpaidInterestMonths) {
+        this.unpaidInterestMonths = unpaidInterestMonths;
     }
 
     public LocalDate getDisbursedDate() {
@@ -160,6 +217,30 @@ public class UserLoanSummary {
 
     public void setRemainingInterest(BigDecimal remainingInterest) {
         this.remainingInterest = remainingInterest;
+    }
+
+    public BigDecimal getPenaltyAmount() {
+        return penaltyAmount;
+    }
+
+    public void setPenaltyAmount(BigDecimal penaltyAmount) {
+        this.penaltyAmount = penaltyAmount;
+    }
+
+    public boolean isLoanExpired() {
+        return loanExpired;
+    }
+
+    public void setLoanExpired(boolean loanExpired) {
+        this.loanExpired = loanExpired;
+    }
+
+    public boolean isLateInterestPayment() {
+        return lateInterestPayment;
+    }
+
+    public void setLateInterestPayment(boolean lateInterestPayment) {
+        this.lateInterestPayment = lateInterestPayment;
     }
 
     public String getStatus() {
