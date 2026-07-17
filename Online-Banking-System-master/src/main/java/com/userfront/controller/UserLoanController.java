@@ -30,9 +30,10 @@ public class UserLoanController {
     public UserLoanSummary getLoanSummary(
             Principal principal,
             @RequestParam("principal") BigDecimal loanPrincipal,
-            @RequestParam("annualInterestRate") BigDecimal annualInterestRate,
+            @RequestParam(value = "annualInterestRate", required = false) BigDecimal annualInterestRate,
             @RequestParam("termMonths") Integer termMonths,
             @RequestParam(value = "paidMonths", defaultValue = "0") Integer paidMonths,
+            @RequestParam(value = "paidInterestMonths", required = false) Integer paidInterestMonths,
             @RequestParam(value = "disbursedDate", required = false) String disbursedDate
     ) {
         UserLoanCalculationRequest request = new UserLoanCalculationRequest();
@@ -40,6 +41,7 @@ public class UserLoanController {
         request.setAnnualInterestRate(annualInterestRate);
         request.setTermMonths(termMonths);
         request.setPaidMonths(paidMonths);
+        request.setPaidInterestMonths(paidInterestMonths);
         request.setDisbursedDate(disbursedDate);
 
         return userLoanService.getLoanSummary(principal.getName(), request);
