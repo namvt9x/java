@@ -80,6 +80,25 @@
             </form>
         </div>
         <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Account Type</h3>
+                </div>
+                <div class="panel-body">
+                    <p th:unless="${companyUser}">Personal account</p>
+                    <div th:if="${companyUser}">
+                        <p><strong>Company account</strong></p>
+                        <table class="table table-bordered">
+                            <tr><th>Company Code</th><td th:text="${company.code}">...</td></tr>
+                            <tr><th>Company Name</th><td th:text="${company.name}">...</td></tr>
+                            <tr><th>Address</th><td th:text="${company.address}">...</td></tr>
+                            <tr><th>Phone</th><td th:text="${company.phone}">...</td></tr>
+                            <tr><th>Email</th><td th:text="${company.email}">...</td></tr>
+                            <tr><th>Status</th><td th:text="${company.active} ? 'Active' : 'Inactive'">...</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
             <div class="panel-heading">
                 <div class="panel-title text-center">
                     <h1 class="title">Your Account Information</h1>
