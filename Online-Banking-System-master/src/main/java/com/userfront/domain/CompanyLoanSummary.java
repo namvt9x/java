@@ -24,9 +24,6 @@ public class CompanyLoanSummary {
     private BigDecimal remainingPrincipal;
     private BigDecimal remainingInterest;
     private String status;
-    private boolean overdue;
-    private boolean badDebt;
-    private Long overdueDays;
     private List<CompanyLoanRepaymentItem> repaymentSchedule;
 
     public Long getCompanyId() {
@@ -171,30 +168,6 @@ public class CompanyLoanSummary {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public boolean isOverdue() {
-        return overdue;
-    }
-
-    public void setOverdue(boolean overdue) {
-        this.overdue = overdue;
-    }
-
-    public boolean isBadDebt() {
-        return badDebt;
-    }
-
-    public void setBadDebt(boolean badDebt) {
-        this.badDebt = badDebt;
-    }
-
-    public Long getOverdueDays() {
-        return overdueDays;
-    }
-
-    public void setOverdueDays(Long overdueDays) {
-        this.overdueDays = overdueDays;
     }
 
     public List<CompanyLoanRepaymentItem> getRepaymentSchedule() {
