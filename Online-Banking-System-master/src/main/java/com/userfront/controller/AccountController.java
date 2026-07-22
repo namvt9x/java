@@ -138,6 +138,56 @@ public class AccountController {
         return "redirect:/account/mobileTopup";
     }
 
+    @RequestMapping(value = "/payment", method = RequestMethod.GET)
+    public String payment(Model model, Principal principal) {
+        populateAccountBalances(model, principal);
+
+        if (!model.containsAttribute("accountType")) {
+            model.addAttribute("accountType", "");
+        }
+        if (!model.containsAttribute("payee")) {
+            model.addAttribute("payee", "");
+        }
+        if (!model.containsAttribute("reference")) {
+            model.addAttribute("reference", "");
+        }
+        if (!model.containsAttribute("amount")) {
+            model.addAttribute("amount", "");
+        }
+
+        return "payment";
+    }
+
+    @RequestMapping(value = "/payment", method = RequestMethod.POST)
+    public String paymentPost(
+            @ModelAttribute("accountType") String accountType,
+            @ModelAttribute("payee") String payee,
+            @ModelAttribute("reference") String reference,
+            @ModelAttribute("amount") String amount,
+            Principal principal,
+            RedirectAttributes redirectAttributes
+    ) {
+        redirectAttributes.addFlashAttribute("accountType", accountType);
+        redirectAttributes.addFlashAttribute("payee", payee);
+        redirectAttributes.addFlashAttribute("reference", reference);
+        redirectAttributes.addFlashAttribute("amount", amount);
+
+        try {
+            accountService.payment(accountType, payee, reference, Double.parseDouble(amount), principal);
+            redirectAttributes.addFlashAttribute("successMessage", "Payment completed successfully.");
+            redirectAttributes.addFlashAttribute("accountType", "");
+            redirectAttributes.addFlashAttribute("payee", "");
+            redirectAttributes.addFlashAttribute("reference", "");
+            redirectAttributes.addFlashAttribute("amount", "");
+        } catch (NumberFormatException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Amount must be a valid number.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+
+        return "redirect:/account/payment";
+    }
+
     private void populateAccountBalances(Model model, Principal principal) {
         User user = userService.findByUsername(principal.getName());
         model.addAttribute("primaryAccount", user.getPrimaryAccount());
