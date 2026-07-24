@@ -13,5 +13,6 @@ public interface AccountService {
     void deposit(String accountType, double amount, Principal principal);
     void withdraw(String accountType, double amount, Principal principal);
     void mobileTopUp(String accountType, String phoneNumber, String carrier, double amount, Principal principal);
+    void payment(String accountType, String payee, String reference, double amount, Principal principal);
     
 }
