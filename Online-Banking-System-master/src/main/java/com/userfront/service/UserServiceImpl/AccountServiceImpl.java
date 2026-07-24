@@ -1,18 +1,12 @@
 package com.userfront.service.UserServiceImpl;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.security.Principal;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StreamUtils;
 
 import com.userfront.dao.PrimaryAccountDao;
 import com.userfront.dao.SavingsAccountDao;
@@ -42,9 +36,6 @@ public class AccountServiceImpl implements AccountService {
     
     @Autowired
     private TransactionService transactionService;
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     public PrimaryAccount createPrimaryAccount() {
         PrimaryAccount primaryAccount = new PrimaryAccount();
@@ -122,7 +113,7 @@ public class AccountServiceImpl implements AccountService {
 
         if (accountType.equalsIgnoreCase("Primary")) {
             PrimaryAccount primaryAccount = user.getPrimaryAccount();
-            ensureSufficientBalanceBySql(accountType, user.getUsername(), amount, "Insufficient balance for this mobile top up.");
+            ensureSufficientBalance(primaryAccount.getAccountBalance(), amount);
             primaryAccount.setAccountBalance(primaryAccount.getAccountBalance().subtract(BigDecimal.valueOf(amount)));
             primaryAccountDao.save(primaryAccount);
 
@@ -130,7 +121,7 @@ public class AccountServiceImpl implements AccountService {
             transactionService.savePrimaryWithdrawTransaction(primaryTransaction);
         } else if (accountType.equalsIgnoreCase("Savings")) {
             SavingsAccount savingsAccount = user.getSavingsAccount();
-            ensureSufficientBalanceBySql(accountType, user.getUsername(), amount, "Insufficient balance for this mobile top up.");
+            ensureSufficientBalance(savingsAccount.getAccountBalance(), amount);
             savingsAccount.setAccountBalance(savingsAccount.getAccountBalance().subtract(BigDecimal.valueOf(amount)));
             savingsAccountDao.save(savingsAccount);
 
@@ -163,83 +154,9 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
-    public void payment(String accountType, String payee, String reference, double amount, Principal principal) {
-        validatePaymentRequest(accountType, payee, amount);
-
-        User user = userService.findByUsername(principal.getName());
-        String paymentReference = reference == null || reference.trim().isEmpty() ? "N/A" : reference.trim();
-        String description = "Payment to " + payee.trim() + " - Ref: " + paymentReference;
-        Date date = new Date();
-
-        if (accountType.equalsIgnoreCase("Primary")) {
-            PrimaryAccount primaryAccount = user.getPrimaryAccount();
-            ensureSufficientBalanceBySql(accountType, user.getUsername(), amount, "Insufficient balance for this payment.");
-            primaryAccount.setAccountBalance(primaryAccount.getAccountBalance().subtract(BigDecimal.valueOf(amount)));
-            primaryAccountDao.save(primaryAccount);
-
-            PrimaryTransaction primaryTransaction = new PrimaryTransaction(date, description, "Payment", "Finished", amount, primaryAccount.getAccountBalance(), primaryAccount);
-            transactionService.savePrimaryWithdrawTransaction(primaryTransaction);
-        } else if (accountType.equalsIgnoreCase("Savings")) {
-            SavingsAccount savingsAccount = user.getSavingsAccount();
-            ensureSufficientBalanceBySql(accountType, user.getUsername(), amount, "Insufficient balance for this payment.");
-            savingsAccount.setAccountBalance(savingsAccount.getAccountBalance().subtract(BigDecimal.valueOf(amount)));
-            savingsAccountDao.save(savingsAccount);
-
-            SavingsTransaction savingsTransaction = new SavingsTransaction(date, description, "Payment", "Finished", amount, savingsAccount.getAccountBalance(), savingsAccount);
-            transactionService.saveSavingsWithdrawTransaction(savingsTransaction);
-        } else {
-            throw new IllegalArgumentException("Invalid account type.");
-        }
-    }
-
-    private void validatePaymentRequest(String accountType, String payee, double amount) {
-        if (!"Primary".equalsIgnoreCase(accountType) && !"Savings".equalsIgnoreCase(accountType)) {
-            throw new IllegalArgumentException("Please select a valid account.");
-        }
-
-        if (payee == null || payee.trim().isEmpty()) {
-            throw new IllegalArgumentException("Payee is required.");
-        }
-
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Payment amount must be greater than 0.");
-        }
-    }
-
-    private void ensureSufficientBalanceBySql(String accountType, String username, double amount, String errorMessage) {
-        String sqlResourcePath = resolveBalanceCheckSqlPath(accountType);
-        String sql = loadSqlFromResource(sqlResourcePath);
-        Boolean hasSufficientBalance = jdbcTemplate.query(
-                sql,
-                new Object[]{BigDecimal.valueOf(amount), username},
-                rs -> rs.next() && rs.getBoolean("has_sufficient_balance")
-        );
-
-        if (!Boolean.TRUE.equals(hasSufficientBalance)) {
-            throw new IllegalArgumentException(errorMessage);
-        }
-    }
-
-    private String resolveBalanceCheckSqlPath(String accountType) {
-        if ("Primary".equalsIgnoreCase(accountType)) {
-            return "sql/payment/check-primary-account-balance.sql";
-        }
-
-        if ("Savings".equalsIgnoreCase(accountType)) {
-            return "sql/payment/check-savings-account-balance.sql";
-        }
-
-        throw new IllegalArgumentException("Please select a valid account.");
-    }
-
-    private String loadSqlFromResource(String resourcePath) {
-        try (InputStream inputStream = Objects.requireNonNull(
-                this.getClass().getClassLoader().getResourceAsStream(resourcePath),
-                "SQL resource not found: " + resourcePath
-        )) {
-            return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            throw new IllegalStateException("Failed to load SQL resource: " + resourcePath, ex);
+    private void ensureSufficientBalance(BigDecimal balance, double amount) {
+        if (balance.compareTo(BigDecimal.valueOf(amount)) < 0) {
+            throw new IllegalArgumentException("Insufficient balance for this mobile top up.");
         }
     }
 
