@@ -4,14 +4,17 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.userfront.domain.Company;
+import com.userfront.domain.CompanyLoanBadDebtReviewRequest;
 import com.userfront.domain.CompanyLoanCalculationRequest;
 import com.userfront.domain.CompanyLoanRepaymentItem;
 import com.userfront.domain.CompanyLoanSummary;
@@ -37,6 +40,22 @@ public class CompanyLoanServiceImpl implements CompanyLoanService {
         return buildLoanSummary(companyId, request, true);
     }
 
+    public CompanyLoanSummary reviewBadDebt(Long companyId, CompanyLoanCalculationRequest request) {
+        validateDisbursedDateRequired(request);
+        return buildLoanSummary(companyId, request, true);
+    }
+
+    public List<CompanyLoanSummary> reviewBadDebtList(List<CompanyLoanBadDebtReviewRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            throw new IllegalArgumentException("Bad debt review list is required.");
+        }
+
+        return requests.stream()
+                .map(this::toBadDebtSummary)
+                .filter(CompanyLoanSummary::isBadDebt)
+                .collect(Collectors.toList());
+    }
+
     private CompanyLoanSummary buildLoanSummary(Long companyId, CompanyLoanCalculationRequest request, boolean includeSchedule) {
         Company company = findCompanyOrThrow(companyId);
         validateRequest(request);
@@ -44,6 +63,8 @@ public class CompanyLoanServiceImpl implements CompanyLoanService {
         int paidMonths = request.getPaidMonths() == null ? 0 : request.getPaidMonths();
         LocalDate disbursedDate = parseDate(request.getDisbursedDate());
         LoanMetrics metrics = calculateLoanMetrics(request.getPrincipal(), request.getAnnualInterestRate(), request.getTermMonths(), paidMonths);
+        LocalDate nextDueDate = disbursedDate == null ? null : disbursedDate.plusMonths((long) paidMonths + 1L);
+        OverdueInfo overdueInfo = determineOverdueInfo(nextDueDate, metrics.getRemainingPrincipal());
 
         CompanyLoanSummary summary = new CompanyLoanSummary();
         summary.setCompanyId(company.getCompanyId());
@@ -55,7 +76,7 @@ public class CompanyLoanServiceImpl implements CompanyLoanService {
         summary.setPaidMonths(paidMonths);
         summary.setRemainingMonths(Math.max(request.getTermMonths() - paidMonths, 0));
         summary.setDisbursedDate(disbursedDate);
-        summary.setNextDueDate(disbursedDate == null ? null : disbursedDate.plusMonths((long) paidMonths + 1L));
+        summary.setNextDueDate(nextDueDate);
         summary.setMonthlyPayment(metrics.getMonthlyPayment());
         summary.setTotalInterest(metrics.getTotalInterest());
         summary.setTotalPayment(metrics.getTotalPayment());
@@ -63,7 +84,10 @@ public class CompanyLoanServiceImpl implements CompanyLoanService {
         summary.setPaidInterest(metrics.getPaidInterest());
         summary.setRemainingPrincipal(metrics.getRemainingPrincipal());
         summary.setRemainingInterest(metrics.getRemainingInterest());
-        summary.setStatus(determineStatus(paidMonths, request.getTermMonths(), metrics.getRemainingPrincipal()));
+        summary.setOverdue(overdueInfo.isOverdue());
+        summary.setBadDebt(overdueInfo.isBadDebt());
+        summary.setOverdueDays(overdueInfo.getOverdueDays());
+        summary.setStatus(determineStatus(paidMonths, request.getTermMonths(), metrics.getRemainingPrincipal(), overdueInfo.isBadDebt()));
 
         if (includeSchedule) {
             summary.setRepaymentSchedule(buildRepaymentSchedule(request, disbursedDate));
@@ -164,9 +188,12 @@ public class CompanyLoanServiceImpl implements CompanyLoanService {
                 .divide(TWELVE, 10, RoundingMode.HALF_UP);
     }
 
-    private String determineStatus(int paidMonths, int termMonths, BigDecimal remainingPrincipal) {
+    private String determineStatus(int paidMonths, int termMonths, BigDecimal remainingPrincipal, boolean badDebt) {
         if (paidMonths >= termMonths || remainingPrincipal.compareTo(BigDecimal.ZERO) == 0) {
             return "CLOSED";
+        }
+        if (badDebt) {
+            return "BAD_DEBT";
         }
         if (paidMonths == 0) {
             return "NEW";
@@ -221,8 +248,71 @@ public class CompanyLoanServiceImpl implements CompanyLoanService {
         return company;
     }
 
+    private CompanyLoanSummary toBadDebtSummary(CompanyLoanBadDebtReviewRequest request) {
+        if (request == null || request.getCompanyId() == null) {
+            throw new IllegalArgumentException("Company id is required for bad debt review.");
+        }
+
+        validateDisbursedDateRequired(request.getLoan());
+        return buildLoanSummary(request.getCompanyId(), request.getLoan(), true);
+    }
+
+    private void validateDisbursedDateRequired(CompanyLoanCalculationRequest request) {
+        if (request == null || request.getDisbursedDate() == null || request.getDisbursedDate().trim().isEmpty()) {
+            throw new IllegalArgumentException("Disbursed date is required to review overdue loans.");
+        }
+    }
+
+    private OverdueInfo determineOverdueInfo(LocalDate nextDueDate, BigDecimal remainingPrincipal) {
+        OverdueInfo overdueInfo = new OverdueInfo();
+
+        if (nextDueDate == null || remainingPrincipal.compareTo(BigDecimal.ZERO) <= 0) {
+            overdueInfo.setOverdue(false);
+            overdueInfo.setBadDebt(false);
+            overdueInfo.setOverdueDays(0L);
+            return overdueInfo;
+        }
+
+        LocalDate today = LocalDate.now();
+        boolean overdue = nextDueDate.isBefore(today);
+        overdueInfo.setOverdue(overdue);
+        overdueInfo.setBadDebt(overdue);
+        overdueInfo.setOverdueDays(overdue ? ChronoUnit.DAYS.between(nextDueDate, today) : 0L);
+        return overdueInfo;
+    }
+
     private BigDecimal scale(BigDecimal value) {
         return value.setScale(SCALE, RoundingMode.HALF_UP);
+    }
+
+    private static class OverdueInfo {
+        private boolean overdue;
+        private boolean badDebt;
+        private long overdueDays;
+
+        public boolean isOverdue() {
+            return overdue;
+        }
+
+        public void setOverdue(boolean overdue) {
+            this.overdue = overdue;
+        }
+
+        public boolean isBadDebt() {
+            return badDebt;
+        }
+
+        public void setBadDebt(boolean badDebt) {
+            this.badDebt = badDebt;
+        }
+
+        public long getOverdueDays() {
+            return overdueDays;
+        }
+
+        public void setOverdueDays(long overdueDays) {
+            this.overdueDays = overdueDays;
+        }
     }
 
     private static class LoanMetrics {
