@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head th:replace="common/header :: common-header"/>
+<body roleId="page-top" data-spy="scroll" data-target=".navbar-fixed-top">
+<head th:replace="common/header :: navbar"/>
+<div class="container main">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Mobile Top Up</h2>
+            <p>Select an account, enter the phone number, choose a carrier, and confirm the amount.</p>
+
+            <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+            <div class="well">
+                <strong>Primary balance:</strong>
+                <span th:text="${primaryAccount.accountBalance}">0</span>
+                <br />
+                <strong>Savings balance:</strong>
+                <span th:text="${savingsAccount.accountBalance}">0</span>
+            </div>
+
+            <form th:action="@{/account/mobileTopup}" method="post">
+                <div class="form-group">
+                    <label for="accountType">1. Account used for top up</label>
+                    <select class="form-control" th:value="${accountType}" name="accountType" id="accountType" required="required">
+                        <option value="" disabled="disabled" th:selected="${accountType == ''}"> -- select your account -- </option>
+                        <option value="Primary" th:selected="${accountType == 'Primary'}">Primary</option>
+                        <option value="Savings" th:selected="${accountType == 'Savings'}">Savings</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="phoneNumber">2. Phone number</label>
+                    <input th:value="${phoneNumber}" type="text" name="phoneNumber" id="phoneNumber" class="form-control" placeholder="e.g. 0901234567" required="required" />
+                </div>
+
+                <div class="form-group">
+                    <label for="carrier">3. Carrier</label>
+                    <select class="form-control" name="carrier" id="carrier" required="required">
+                        <option value="" disabled="disabled" th:selected="${carrier == ''}"> -- select carrier -- </option>
+                        <option value="Viettel" th:selected="${carrier == 'Viettel'}">Viettel</option>
+                        <option value="Vinaphone" th:selected="${carrier == 'Vinaphone'}">Vinaphone</option>
+                        <option value="Mobifone" th:selected="${carrier == 'Mobifone'}">Mobifone</option>
+                        <option value="Vietnamobile" th:selected="${carrier == 'Vietnamobile'}">Vietnamobile</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">4. Amount</label>
+                    <input th:value="${amount}" type="text" name="amount" id="amount" class="form-control" placeholder="e.g. 100000" required="required" />
+                </div>
+
+                <input type="hidden"
+                       name="${_csrf.parameterName}"
+                       value="${_csrf.token}"/>
+
+                <button class="btn btn-lg btn-primary btn-block" type="submit">Complete Top Up</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div th:replace="common/header :: body-bottom-scripts"/>
+
+</body>
+</html>
