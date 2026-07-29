@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head th:replace="common/header :: common-header"/>
+<body roleId="page-top" data-spy="scroll" data-target=".navbar-fixed-top">
+<head th:replace="common/header :: navbar"/>
+<div class="container main">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Payment</h2>
+            <p>Select an account, enter the payee and amount, then the system will check whether the balance is sufficient before completing payment.</p>
+
+            <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+            <div class="well">
+                <strong>Primary balance:</strong>
+                <span th:text="${primaryAccount.accountBalance}">0</span>
+                <br />
+                <strong>Savings balance:</strong>
+                <span th:text="${savingsAccount.accountBalance}">0</span>
+            </div>
+
+            <form th:action="@{/account/payment}" method="post">
+                <div class="form-group">
+                    <label for="accountType">1. Account used for payment</label>
+                    <select class="form-control" th:value="${accountType}" name="accountType" id="accountType" required="required">
+                        <option value="" disabled="disabled" th:selected="${accountType == ''}"> -- select your account -- </option>
+                        <option value="Primary" th:selected="${accountType == 'Primary'}">Primary</option>
+                        <option value="Savings" th:selected="${accountType == 'Savings'}">Savings</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="payee">2. Payee</label>
+                    <input th:value="${payee}" type="text" name="payee" id="payee" class="form-control" placeholder="e.g. Electricity Company" required="required" />
+                </div>
+
+                <div class="form-group">
+                    <label for="reference">3. Reference</label>
+                    <input th:value="${reference}" type="text" name="reference" id="reference" class="form-control" placeholder="e.g. INV-2026-001" />
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">4. Amount</label>
+                    <input th:value="${amount}" type="text" name="amount" id="amount" class="form-control" placeholder="e.g. 250000" required="required" />
+                </div>
+
+                <input type="hidden"
+                       name="${_csrf.parameterName}"
+                       value="${_csrf.token}"/>
+
+                <button class="btn btn-lg btn-primary btn-block" type="submit">Complete Payment</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div th:replace="common/header :: body-bottom-scripts"/>
+
+</body>
+</html>
