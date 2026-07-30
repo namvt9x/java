@@ -14,15 +14,11 @@ public class PaymentService {
     private static final String PROCEDURE_NAME = "prc_process_payment";
     private static final String PRIMARY_ACCOUNT_UPDATE_SQL =
             "UPDATE primary_account SET account_balance = account_balance - ? WHERE user_username = ?";
-    private static final String SAVINGS_ACCOUNT_UPDATE_SQL =
-            "UPDATE savings_account SET account_balance = account_balance - ? WHERE user_username = ?";
 
     private final JdbcTemplate jdbcTemplate;
-    private final SqlResourceLoader sqlResourceLoader;
 
-    public PaymentService(JdbcTemplate jdbcTemplate, SqlResourceLoader sqlResourceLoader) {
+    public PaymentService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.sqlResourceLoader = sqlResourceLoader;
     }
 
     @Transactional
@@ -30,13 +26,8 @@ public class PaymentService {
         validate(request);
 
         String accountType = normalizeAccountType(request.getAccountType());
-        boolean sufficientBalance = hasSufficientBalance(accountType, request.getUsername(), request.getAmount());
-        if (!sufficientBalance) {
-            return new PaymentResponse(false, false, false, "Insufficient balance.");
-        }
-
         callProcedure(request, accountType);
-        int updatedRows = executeAccountUpdateThatCanFireTrigger(accountType, request.getUsername(), request.getAmount());
+        int updatedRows = executeAccountUpdateThatCanFireTrigger(request.getUsername(), request.getAmount());
 
         return new PaymentResponse(
                 true,
@@ -44,18 +35,6 @@ public class PaymentService {
                 updatedRows > 0,
                 "Payment flow completed. PRC was called and the account update was sent to the DB trigger path."
         );
-    }
-
-    private boolean hasSufficientBalance(String accountType, String username, BigDecimal amount) {
-        String sql = sqlResourceLoader.load(getBalanceSqlPath(accountType));
-
-        Boolean result = jdbcTemplate.query(
-                sql,
-                new Object[]{amount, username},
-                rs -> rs.next() && rs.getBoolean("has_sufficient_balance")
-        );
-
-        return Boolean.TRUE.equals(result);
     }
 
     private void callProcedure(PaymentRequest request, String accountType) {
@@ -72,13 +51,9 @@ public class PaymentService {
         });
     }
 
-    private int executeAccountUpdateThatCanFireTrigger(String accountType, String username, BigDecimal amount) {
-        String updateSql = isPrimaryAccount(accountType)
-                ? PRIMARY_ACCOUNT_UPDATE_SQL
-                : SAVINGS_ACCOUNT_UPDATE_SQL;
-
+    private int executeAccountUpdateThatCanFireTrigger(String username, BigDecimal amount) {
         // The trigger itself lives in MySQL. This UPDATE is the statement path that causes it to fire.
-        return jdbcTemplate.update(updateSql, amount, username);
+        return jdbcTemplate.update(PRIMARY_ACCOUNT_UPDATE_SQL, amount, username);
     }
 
     private String buildProcedureCallSql() {
@@ -108,30 +83,12 @@ public class PaymentService {
         if (isPrimaryAccount(value)) {
             return AccountType.PRIMARY.name();
         }
-        if (isSavingsAccount(value)) {
-            return AccountType.SAVINGS.name();
-        }
 
         throw new IllegalArgumentException("Unsupported accountType: " + value);
     }
 
-    private String getBalanceSqlPath(String accountType) {
-        if (isPrimaryAccount(accountType)) {
-            return "sql/payment/check-primary-account-balance.sql";
-        }
-        if (isSavingsAccount(accountType)) {
-            return "sql/payment/check-savings-account-balance.sql";
-        }
-
-        throw new IllegalArgumentException("Unsupported accountType: " + accountType);
-    }
-
     private boolean isPrimaryAccount(String accountType) {
         return AccountType.PRIMARY.name().equalsIgnoreCase(accountType);
-    }
-
-    private boolean isSavingsAccount(String accountType) {
-        return AccountType.SAVINGS.name().equalsIgnoreCase(accountType);
     }
 
     private boolean isBlank(String value) {
