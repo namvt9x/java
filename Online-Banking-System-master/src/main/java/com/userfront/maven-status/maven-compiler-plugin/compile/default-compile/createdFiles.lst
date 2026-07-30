@@ -1,7 +1,0 @@
-com/userfront/PaymentResponse.class
-com/userfront/AccountType.class
-com/userfront/PaymentController.class
-com/userfront/PaymentRequest.class
-com/userfront/SqlResourceLoader.class
-com/userfront/UserFrontApplication.class
-com/userfront/PaymentService.class

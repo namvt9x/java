@@ -3,9 +3,7 @@ package com.userfront;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.SQLException;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,24 +11,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PaymentService {
 
+    private static final String PROCEDURE_NAME = "prc_process_payment";
+    private static final String PRIMARY_ACCOUNT_UPDATE_SQL =
+            "UPDATE primary_account SET account_balance = account_balance - ? WHERE user_username = ?";
+    private static final String SAVINGS_ACCOUNT_UPDATE_SQL =
+            "UPDATE savings_account SET account_balance = account_balance - ? WHERE user_username = ?";
+
     private final JdbcTemplate jdbcTemplate;
     private final SqlResourceLoader sqlResourceLoader;
-    private final String procedureName;
-    private final String primaryAccountUpdateSql;
-    private final String savingsAccountUpdateSql;
 
-    public PaymentService(
-            JdbcTemplate jdbcTemplate,
-            SqlResourceLoader sqlResourceLoader,
-            @Value("${payment.procedure.name}") String procedureName,
-            @Value("${payment.primary-account-update-sql}") String primaryAccountUpdateSql,
-            @Value("${payment.savings-account-update-sql}") String savingsAccountUpdateSql
-    ) {
+    public PaymentService(JdbcTemplate jdbcTemplate, SqlResourceLoader sqlResourceLoader) {
         this.jdbcTemplate = jdbcTemplate;
         this.sqlResourceLoader = sqlResourceLoader;
-        this.procedureName = procedureName;
-        this.primaryAccountUpdateSql = primaryAccountUpdateSql;
-        this.savingsAccountUpdateSql = savingsAccountUpdateSql;
     }
 
     @Transactional
@@ -82,15 +74,15 @@ public class PaymentService {
 
     private int executeAccountUpdateThatCanFireTrigger(String accountType, String username, BigDecimal amount) {
         String updateSql = isPrimaryAccount(accountType)
-                ? primaryAccountUpdateSql
-                : savingsAccountUpdateSql;
+                ? PRIMARY_ACCOUNT_UPDATE_SQL
+                : SAVINGS_ACCOUNT_UPDATE_SQL;
 
         // The trigger itself lives in MySQL. This UPDATE is the statement path that causes it to fire.
         return jdbcTemplate.update(updateSql, amount, username);
     }
 
     private String buildProcedureCallSql() {
-        return "{CALL " + procedureName + "(?, ?, ?, ?, ?)}";
+        return "{CALL " + PROCEDURE_NAME + "(?, ?, ?, ?, ?)}";
     }
 
     private void validate(PaymentRequest request) {
